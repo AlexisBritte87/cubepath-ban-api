@@ -1,4 +1,4 @@
-import { handlePostChat } from "./handlers/chat.ts";
+import { createRoutes } from "./routes.ts";
 import { createOpenRouterClient } from "./services/openrouter-client.ts";
 
 const openrouter = createOpenRouterClient();
@@ -7,25 +7,7 @@ export function startServer() {
   const server = Bun.serve({
     port: Number(process.env.PORT) || 3000,
     idleTimeout: 120,
-    routes: {
-      "/": {
-        GET: () => {
-          const file = Bun.file(
-            new URL("../public/index.html", import.meta.url),
-          );
-          return new Response(file, {
-            headers: { "Content-Type": "text/html; charset=utf-8" },
-          });
-        },
-      },
-      "/health": {
-        GET: () =>
-          Response.json({ status: "ok", timestamp: new Date().toISOString() }),
-      },
-      "/chat": {
-        POST: (req) => handlePostChat(req, openrouter),
-      },
-    },
+    routes: createRoutes(openrouter),
     fetch() {
       return new Response("Not Found", { status: 404 });
     },
