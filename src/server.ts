@@ -8,6 +8,16 @@ export function startServer() {
     port: Number(process.env.PORT) || 3000,
     idleTimeout: 120,
     routes: {
+      "/": {
+        GET: () => {
+          const file = Bun.file(
+            new URL("../public/index.html", import.meta.url),
+          );
+          return new Response(file, {
+            headers: { "Content-Type": "text/html; charset=utf-8" },
+          });
+        },
+      },
       "/health": {
         GET: () =>
           Response.json({ status: "ok", timestamp: new Date().toISOString() }),

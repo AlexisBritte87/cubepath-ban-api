@@ -79,7 +79,7 @@ function parseMessages(body: unknown):
 }
 
 /**
- * POST /chat — streaming en texto plano (chunks UTF-8).
+ * POST /chat — streaming SSE (Server-Sent Events).
  * Cuerpo: `{ "message": "..." }` o `{ "messages": [...], "model"?: "..." }`.
  */
 export async function handlePostChat(
@@ -108,6 +108,9 @@ export async function handlePostChat(
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
+      const sendEvent = (event: string, data: string) => {
+        controller.enqueue(encoder.encode(`event: ${event}\ndata: ${data}\n\n`));
+      };
       try {
         const sdkStream = await client.chat.send({
           chatGenerationParams: {
@@ -119,23 +122,24 @@ export async function handlePostChat(
 
         for await (const chunk of sdkStream) {
           if (chunk.error) {
-            controller.enqueue(
-              encoder.encode(`\n[error] ${chunk.error.message}\n`),
-            );
+            sendEvent("error", JSON.stringify({ message: chunk.error.message }));
             break;
           }
 
           const content = chunk.choices[0]?.delta?.content;
-          if (content) controller.enqueue(encoder.encode(content));
+          if (content) {
+            sendEvent("token", JSON.stringify({ content }));
+          }
 
           const reasoning = chunk.usage?.completionTokensDetails?.reasoningTokens;
           if (reasoning != null) {
             console.log("Reasoning tokens:", reasoning);
           }
         }
+        sendEvent("done", "[DONE]");
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Unknown error";
-        controller.enqueue(encoder.encode(`\n[error] ${msg}\n`));
+        sendEvent("error", JSON.stringify({ message: msg }));
       } finally {
         controller.close();
       }
@@ -144,8 +148,9 @@ export async function handlePostChat(
 
   return new Response(stream, {
     headers: {
-      "Content-Type": "text/plain; charset=utf-8",
+      "Content-Type": "text/event-stream; charset=utf-8",
       "Cache-Control": "no-cache",
+      "X-Accel-Buffering": "no",
     },
   });
 }
