@@ -1,5 +1,4 @@
-import type { OpenRouter } from "@openrouter/sdk";
-import { createOpenRouterSseStream } from "../chat/openrouter-stream.ts";
+import type { RoundRobinProviders } from "../services/round-robin.ts";
 import { parseChatRequestBody } from "../chat/parse-request.ts";
 import { jsonError, sseResponseHeaders } from "../http/responses.ts";
 
@@ -8,14 +7,17 @@ import { jsonError, sseResponseHeaders } from "../http/responses.ts";
  */
 export async function handlePostChat(
   req: Request,
-  client: OpenRouter | null,
+  providers: RoundRobinProviders,
 ): Promise<Response> {
-  if (!client) {
+  const provider = providers.getNext();
+  if (!provider) {
     return jsonError(
       503,
-      "OPENROUTER_API_KEY is not set. Add it to the environment or a .env file.",
+      "No API keys configured. Please add OPENROUTER_API_KEY, GROQ_API_KEY, or CEREBRAS_API_KEY to your .env file.",
     );
   }
+
+  console.log(`[CHAT] Petición recibida. Usando LLM: ${provider.name} (Modelo: ${provider.model})`);
 
   let body: unknown;
   try {
@@ -27,10 +29,7 @@ export async function handlePostChat(
   const parsed = parseChatRequestBody(body);
   if (!parsed.ok) return parsed.response;
 
-  const stream = createOpenRouterSseStream(client, {
-    model: parsed.model,
-    messages: parsed.messages,
-  });
+  const stream = provider.createStream(parsed.messages);
 
   return new Response(stream, { headers: sseResponseHeaders });
 }

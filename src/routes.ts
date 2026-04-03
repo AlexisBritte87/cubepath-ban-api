@@ -1,4 +1,4 @@
-import type { OpenRouter } from "@openrouter/sdk";
+import type { RoundRobinProviders } from "./services/round-robin.ts";
 import { handlePostChat } from "./handlers/chat.ts";
 import { handleHealthGet } from "./handlers/health.ts";
 import { handleLandingGet } from "./handlers/landing.ts";
@@ -7,7 +7,7 @@ import { handleLandingGet } from "./handlers/landing.ts";
  * Mapa de rutas para `Bun.serve({ routes })`.
  * Centraliza qué handler atiende cada path/método.
  */
-export function createRoutes(openrouter: OpenRouter | null) {
+export function createRoutes(providers: RoundRobinProviders) {
   return {
     "/": {
       GET: () => handleLandingGet(),
@@ -16,7 +16,7 @@ export function createRoutes(openrouter: OpenRouter | null) {
       GET: () => handleHealthGet(),
     },
     "/chat": {
-      POST: (req: Request) => handlePostChat(req, openrouter),
+      POST: (req: Request) => handlePostChat(req, providers),
     },
   };
 }
