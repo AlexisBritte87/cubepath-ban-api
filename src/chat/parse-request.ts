@@ -5,7 +5,7 @@ import { jsonError } from "../http/responses.ts";
 export type ChatRole = "user" | "system" | "assistant" | "developer";
 
 export type ParsedChatRequest =
-  | { ok: true; messages: Message[]; model: string }
+  | { ok: true; messages: Message[]; model: string; provider?: string }
   | { ok: false; response: Response };
 
 /**
@@ -21,6 +21,11 @@ export function parseChatRequestBody(body: unknown): ParsedChatRequest {
     typeof o.model === "string" && o.model.trim() !== ""
       ? o.model.trim()
       : DEFAULT_CHAT_MODEL;
+
+  const provider =
+    typeof o.provider === "string" && o.provider.trim() !== ""
+      ? o.provider.trim()
+      : undefined;
 
   if (Array.isArray(o.messages)) {
     const messages: Message[] = [];
@@ -59,7 +64,7 @@ export function parseChatRequestBody(body: unknown): ParsedChatRequest {
     if (messages.length === 0) {
       return { ok: false, response: jsonError(400, "messages must not be empty") };
     }
-    return { ok: true, messages, model };
+    return { ok: true, messages, model, provider };
   }
 
   if (typeof o.message === "string" && o.message.trim() !== "") {
@@ -67,6 +72,7 @@ export function parseChatRequestBody(body: unknown): ParsedChatRequest {
       ok: true,
       messages: [{ role: "user", content: o.message.trim() } as Message],
       model,
+      provider,
     };
   }
 

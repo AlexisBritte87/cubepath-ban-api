@@ -22,4 +22,8 @@ export class RoundRobinProviders {
     this.currentIndex = (this.currentIndex + 1) % this.providers.length;
     return provider ?? null;
   }
+
+  getProviderByName(name: string): ChatProvider | null {
+    return this.providers.find(p => p.name.toLowerCase() === name.toLowerCase()) || null;
+  }
 }

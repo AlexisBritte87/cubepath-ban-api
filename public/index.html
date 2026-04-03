@@ -153,6 +153,29 @@
       color: var(--text);
     }
 
+    .provider-select {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 0.4rem 0.8rem;
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      transition: all 0.2s ease;
+    }
+    .provider-select:hover {
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+    }
+    .provider-select option {
+      background: var(--surface);
+      color: var(--text);
+    }
+
     .send-btn {
       background: var(--text);
       color: var(--bg);
@@ -324,6 +347,12 @@
         <textarea id="msg" placeholder="Escribe tu mensaje..."></textarea>
         <div class="input-actions" style="justify-content: flex-end;">
           <div class="actions-group">
+            <select id="provider-select" class="provider-select" title="Seleccionar LLM">
+              <option value="Auto">Auto (Round Robin)</option>
+              <option value="OpenRouter">OpenRouter</option>
+              <option value="Groq">Groq</option>
+              <option value="Cerebras">Cerebras</option>
+            </select>
             <button class="icon-btn send-btn" id="sendBtn" title="Enviar">
               <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
             </button>
@@ -389,6 +418,7 @@
 
     async function streamChat() {
       const message = msgEl.value.trim();
+      const provider = document.getElementById("provider-select").value;
       if (!message) return;
 
       // Switch to Chat Layout
@@ -424,7 +454,7 @@
         const res = await fetch("/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message }),
+          body: JSON.stringify({ message, provider }),
         });
 
         botMsgDiv.textContent = ""; // Clear 'Pensando...'
