@@ -361,6 +361,23 @@
       </div>
     </div>
 
+    <!-- REST API Tester -->
+    <div class="pills-container" id="api-tools">
+      <h3 style="color: var(--text-muted); font-size: 1rem; font-weight: 500; margin-bottom: 0.5rem;">Prueba rápida de API REST PostgreSQL</h3>
+      <div class="pills-row">
+        <button class="pill" onclick="testApi('init')">
+          <span class="pill-emoji">🏗️</span> POST /api/init-db
+        </button>
+        <button class="pill" onclick="testApi('get')">
+          <span class="pill-emoji">📋</span> GET /api/users
+        </button>
+        <button class="pill" onclick="testApi('post')">
+          <span class="pill-emoji">➕</span> POST /api/users
+        </button>
+      </div>
+      <pre id="api-result" style="width: 100%; background: var(--surface); padding: 1.2rem; border-radius: 12px; margin-top: 1rem; overflow-x: auto; color: var(--accent); font-size: 0.95rem; font-family: monospace; display: none; border: 1px solid rgba(255,255,255,0.05);"></pre>
+    </div>
+
 
 
   </main>
@@ -539,7 +556,38 @@
       }
     });
 
-    // Make pills clickable to populate input and autofocus logic removed
+    // REST API endpoints tester
+    async function testApi(action) {
+      const resultEl = document.getElementById('api-result');
+      resultEl.style.display = 'block';
+      resultEl.textContent = 'Cargando...';
+      
+      try {
+        let res;
+        if (action === 'init') {
+          res = await fetch('/api/init-db', { method: 'POST' });
+        } else if (action === 'get') {
+          res = await fetch('/api/users');
+        } else if (action === 'post') {
+          res = await fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: 'Usuario Prueba', email: `test${Date.now()}@cubepath.com` })
+          });
+        }
+        
+        let data;
+        let responseText = await res.text();
+        try {
+          data = JSON.parse(responseText);
+          resultEl.textContent = `STATUS: ${res.status} ${res.statusText}\n\n` + JSON.stringify(data, null, 2);
+        } catch {
+          resultEl.textContent = `STATUS: ${res.status} ${res.statusText}\n\n` + responseText;
+        }
+      } catch (err) {
+        resultEl.textContent = 'Error de conexión: ' + err.message;
+      }
+    }
   </script>
 </body>
 </html>

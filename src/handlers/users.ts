@@ -1,5 +1,20 @@
 import { sql } from "bun";
 
+// Auto-initialize the table on startup/import
+try {
+  await sql`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) UNIQUE NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+  console.log("[INFO] PostgreSQL 'users' table verificado/auto-inicializado ok.");
+} catch (err: any) {
+  console.warn("[WARN] No se pudo auto-inicializar la BD. Revisa DATABASE_URL en .env:", err.message);
+}
+
 // Initialize table if it doesn't exist
 export async function handleInitDB() {
   try {
